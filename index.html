@@ -259,7 +259,7 @@
     <div id="upgradeModal" class="modal-overlay" style="display: none;">
         <div class="modal-card">
             <div class="modal-title" id="txt-levelup">LEVEL UP!</div>
-            <div class="modal-text" id="txt-upgradedesc">Choose an upgrade for your Blue Dog Ronke:</div>
+            <div class="modal-text" id="txt-upgradedesc">Choose an upgrade for your Blue Ronke Ape:</div>
             <div id="upgradeOptionsContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
     </div>
@@ -275,7 +275,7 @@
                 statusWait: "Status: Waiting for connection",
                 connect: "🔗 CONNECT RONIN WALLET",
                 levelup: "LEVEL UP!",
-                upgradedesc: "Choose an upgrade for your Blue Dog Ronke:",
+                upgradedesc: "Choose an upgrade for your Blue Ronke Ape:",
                 langButton: "🌐 Español",
                 upgrades: {
                     triple: { name: "💥 Triple Shot", desc: "Fires 3 projectiles simultaneously in a spread pattern." },
@@ -293,7 +293,7 @@
                 statusWait: "Status: Esperando conexión",
                 connect: "🔗 CONECTAR RONIN WALLET",
                 levelup: "¡SUBIDA DE NIVEL!",
-                upgradedesc: "Elige una mejora para tu Perro Azul Ronke:",
+                upgradedesc: "Elige una mejora para tu Mono Azul Ronke:",
                 langButton: "🌐 Tagalog",
                 upgrades: {
                     triple: { name: "💥 Triple Disparo", desc: "Dispara 3 proyectiles simultáneamente en abanico." },
@@ -311,7 +311,7 @@
                 statusWait: "Status: Naghihintay ng koneksyon",
                 connect: "🔗 KUMUNEKTA SA RONIN WALLET",
                 levelup: "UMANGAT SA ANTAS!",
-                upgradedesc: "Pumili ng pagpapahusay para sa iyong Blue Dog Ronke:",
+                upgradedesc: "Pumili ng pagpapahusay para sa iyong Blue Ronke Ape:",
                 langButton: "🌐 English",
                 upgrades: {
                     triple: { name: "💥 Triple Shot", desc: "Bumabaril ng 3 projectiles nang sabay-sabay sa spread pattern." },
@@ -421,11 +421,11 @@
             }
         }
 
-        // Jugador: Tu perro azul (perros son los azules en el juego)
+        // Jugador: Tu Mono Azul (Ronke)
         let player = {
             x: WORLD_WIDTH / 2,
             y: WORLD_HEIGHT / 2,
-            radius: 20,
+            radius: 22,
             speed: 5,
             hp: 100,
             maxHp: 100,
@@ -809,17 +809,35 @@
                 ctx.fillText(en.icon, en.x - 12, en.y + 8);
             });
 
-            // Tu Perro Azul (Personaje principal / Mono azul) 🐶
-            ctx.fillStyle = '#38bdf8';
+            // --- TU MONO AZUL (RONKE) ---
+            // Cabeza azul principal
+            ctx.fillStyle = '#1d4ed8';
             ctx.beginPath();
             ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
             ctx.fill();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#38bdf8';
             ctx.stroke();
 
-            ctx.font = '22px monospace';
-            ctx.fillText('🐶', player.x - 12, player.y + 8);
+            // Hocico gris característico de Ronke
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath();
+            ctx.ellipse(player.x + 4, player.y + 6, 11, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ojos / Parches claros
+            ctx.fillStyle = '#93c5fd';
+            ctx.beginPath();
+            ctx.arc(player.x - 4, player.y - 4, 5, 0, Math.PI * 2);
+            ctx.arc(player.x + 8, player.y - 4, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pupilas negras
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(player.x - 4, player.y - 4, 2, 0, Math.PI * 2);
+            ctx.arc(player.x + 8, player.y - 4, 2, 0, Math.PI * 2);
+            ctx.fill();
 
             ctx.restore();
         }
@@ -835,4 +853,3 @@
     </script>
 </body>
 </html>
-
