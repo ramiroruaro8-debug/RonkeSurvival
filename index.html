@@ -128,12 +128,6 @@
             font-weight: bold;
         }
 
-        .modal-text {
-            color: #94a3b8;
-            font-size: 12px;
-            line-height: 1.4;
-        }
-
         .modal-input {
             background: #0f172a;
             border: 2px solid #475569;
@@ -240,7 +234,6 @@
     <div id="startModal" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-title" id="txt-title">RONKE SURVIVE</div>
-            <div class="modal-text" id="txt-desc">Open world 3000x3000px with cars, signs, Jihoz statues and cybernetic hordes.</div>
             
             <!-- Play as Guest Option -->
             <button class="modal-btn guest-btn" id="playGuestBtn">🎮 PLAY AS GUEST</button>
@@ -248,7 +241,7 @@
             <div class="divider"></div>
 
             <!-- WalletConnect Option -->
-            <div class="modal-text" id="txt-wallet-label" style="text-align: left; margin-bottom: -4px;"><b>WalletConnect (Ronin / Mobile):</b></div>
+            <div class="modal-text" id="txt-wallet-label" style="text-align: left; margin-bottom: -4px; font-size: 11px; color: #94a3b8;"><b>WalletConnect (Ronin / Mobile):</b></div>
             <input type="text" id="wcProjectIdInput" class="modal-input" value="3a8170812b534d0ff9d794f19a901d64">
             
             <div class="wallet-status" id="walletStatusMsg">Status: Waiting for connection</div>
@@ -259,7 +252,7 @@
     <div id="upgradeModal" class="modal-overlay" style="display: none;">
         <div class="modal-card">
             <div class="modal-title" id="txt-levelup">LEVEL UP!</div>
-            <div class="modal-text" id="txt-upgradedesc">Choose an upgrade for your Blue Ronke Ape:</div>
+            <div class="modal-text" id="txt-upgradedesc" style="font-size: 11px; color: #94a3b8;">Choose an upgrade for your Blue Ronke Ape:</div>
             <div id="upgradeOptionsContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
     </div>
@@ -269,7 +262,6 @@
         const translations = {
             en: {
                 title: "RONKE SURVIVE",
-                desc: "3000x3000px open world with cars, signs, Jihoz statues and cybernetic hordes.",
                 play: "🎮 PLAY AS GUEST",
                 walletLabel: "WalletConnect (Ronin / Mobile):",
                 statusWait: "Status: Waiting for connection",
@@ -287,7 +279,6 @@
             },
             es: {
                 title: "RONKE SURVIVE",
-                desc: "Mundo abierto de 3000x3000px con autos, carteles, estatuas de Jihoz y hordas cibernéticas.",
                 play: "🎮 JUGAR DE INVITADO",
                 walletLabel: "WalletConnect (Ronin / Mobile):",
                 statusWait: "Status: Esperando conexión",
@@ -305,7 +296,6 @@
             },
             tl: {
                 title: "RONKE SURVIVE",
-                desc: "3000x3000px bukas na mundo na may mga kotse, karatula, Jihoz statues, at cybernetic hordes.",
                 play: "🎮 MAGLARO BILANG GUEST",
                 walletLabel: "WalletConnect (Ronin / Mobile):",
                 statusWait: "Status: Naghihintay ng koneksyon",
@@ -336,7 +326,6 @@
         function updateTexts() {
             const t = translations[currentLang];
             document.getElementById('txt-title').innerText = t.title;
-            document.getElementById('txt-desc').innerText = t.desc;
             document.getElementById('playGuestBtn').innerText = t.play;
             document.getElementById('txt-wallet-label').innerHTML = `<b>${t.walletLabel}</b>`;
             document.getElementById('walletStatusMsg').innerText = t.statusWait;
@@ -420,7 +409,6 @@
             }
         }
 
-        // Asignación segura de eventos UI
         document.getElementById('playGuestBtn').addEventListener('click', playAsGuest);
         document.getElementById('connectWalletBtn').addEventListener('click', connectWalletConnect);
         document.getElementById('lang-selector').addEventListener('click', toggleLanguage);
@@ -439,15 +427,15 @@
             damage: 15,
             fireRate: 32,
             fireTimer: 0,
-            range: 420,
-            bulletSpeed: 8,
+            range: 480,
+            bulletSpeed: 9,
             projectiles: 1
         };
 
         let camera = {
             x: 0,
             y: 0,
-            zoom: 0.72,
+            zoom: 0.6,
             update() {
                 let viewW = width / this.zoom;
                 let viewH = height / this.zoom;
@@ -487,46 +475,88 @@
 
         let enemies = [];
         let bullets = [];
-        let gems = [];
-        let obstacles = [];
-        let mapDecorations = [];
+        let dataChips = [];
+        let walls = [];
+        let cars = [];
+
+        // Función de utilidad para verificar superposición de rectángulos
+        function checkOverlap(x1, y1, w1, h1, x2, y2, w2, h2) {
+            return x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2;
+        }
 
         function generateMapElements() {
-            obstacles = [];
-            mapDecorations = [];
+            walls = [];
+            cars = [];
+            let maxTries = 100;
 
-            for (let i = 0; i < 45; i++) {
-                obstacles.push({
-                    x: 200 + Math.random() * (WORLD_WIDTH - 400),
-                    y: 200 + Math.random() * (WORLD_HEIGHT - 400),
-                    radius: 24 + Math.random() * 20
-                });
+            // Generación de paredes/barreras ciberpunk sin encimarse
+            for (let i = 0; i < 28; i++) {
+                let placed = false;
+                let tries = 0;
+                while (!placed && tries < maxTries) {
+                    tries++;
+                    let w = {
+                        x: 250 + Math.random() * (WORLD_WIDTH - 500),
+                        y: 250 + Math.random() * (WORLD_HEIGHT - 500),
+                        width: 140 + Math.random() * 120,
+                        height: 24
+                    };
+
+                    let overlap = false;
+                    for (let wall of walls) {
+                        if (checkOverlap(w.x, w.y, w.width, w.height, wall.x, wall.y, wall.width, wall.height)) {
+                            overlap = true;
+                            break;
+                        }
+                    }
+                    if (!overlap) {
+                        walls.push(w);
+                        placed = true;
+                    }
+                }
             }
 
-            for (let i = 0; i < 25; i++) {
-                mapDecorations.push({
-                    type: 'car',
-                    x: Math.random() * WORLD_WIDTH,
-                    y: Math.random() * WORLD_HEIGHT,
-                    color: Math.random() > 0.5 ? '#38bdf8' : '#ef4444'
-                });
-            }
+            // Generación de coches sin encimarse entre sí ni con las paredes
+            for (let i = 0; i < 22; i++) {
+                let placed = false;
+                let tries = 0;
+                while (!placed && tries < maxTries) {
+                    tries++;
+                    let isVertical = Math.random() > 0.5;
+                    let cW = isVertical ? 40 : 75;
+                    let cH = isVertical ? 75 : 40;
+                    let c = {
+                        x: Math.random() * (WORLD_WIDTH - cW - 100) + 50,
+                        y: Math.random() * (WORLD_HEIGHT - cH - 100) + 50,
+                        width: cW,
+                        height: cH,
+                        color: Math.random() > 0.5 ? '#38bdf8' : '#ef4444',
+                        angle: isVertical ? Math.PI / 2 : 0
+                    };
 
-            for (let i = 0; i < 20; i++) {
-                mapDecorations.push({
-                    type: 'sign',
-                    text: Math.random() > 0.5 ? 'RONIN NETWORK' : 'AXS METAVERSE',
-                    x: Math.random() * WORLD_WIDTH,
-                    y: Math.random() * WORLD_HEIGHT
-                });
-            }
+                    let overlap = false;
+                    // Verificar colisión con paredes (con margen de seguridad)
+                    for (let wall of walls) {
+                        if (checkOverlap(c.x - 15, c.y - 15, c.width + 30, c.height + 30, wall.x, wall.y, wall.width, wall.height)) {
+                            overlap = true;
+                            break;
+                        }
+                    }
+                    // Verificar colisión con otros coches
+                    if (!overlap) {
+                        for (let car of cars) {
+                            if (checkOverlap(c.x, c.y, c.width, c.height, car.x, car.y, car.width, car.height)) {
+                                overlap = true;
+                                break;
+                            }
+                        }
+                    }
 
-            for (let i = 0; i < 12; i++) {
-                mapDecorations.push({
-                    type: 'jihoz',
-                    x: Math.random() * WORLD_WIDTH,
-                    y: Math.random() * WORLD_HEIGHT
-                });
+                    if (!overlap) {
+                        cars.push(c);
+                        placed = true;
+                    }
+                }
             }
         }
 
@@ -548,7 +578,7 @@
             player.projectiles = 1;
             enemies = [];
             bullets = [];
-            gems = [];
+            dataChips = [];
             generateMapElements();
             updateHUD();
         }
@@ -564,7 +594,7 @@
         let spawnTimer = 0;
         function spawnEnemies() {
             spawnTimer++;
-            let interval = Math.max(10, 45 - Math.floor(gameTime / 400));
+            let interval = Math.max(15, 55 - Math.floor(gameTime / 250) - (player.level * 3));
             if (spawnTimer >= interval) {
                 spawnTimer = 0;
                 let angle = Math.random() * Math.PI * 2;
@@ -577,22 +607,21 @@
                 ey = Math.max(30, Math.min(WORLD_HEIGHT - 30, ey));
 
                 let typeRand = Math.random();
-                let diffBonus = Math.floor(gameTime / 500);
-                let hp = 22 + player.level * 6 + diffBonus * 4;
-                let speed = 2.0 + Math.random() * 0.8 + (diffBonus * 0.05);
-                let icon = '👹';
+                let baseHp = 10 + (player.level - 1) * 12 + Math.floor(gameTime / 350) * 8;
+                let baseSpeed = 1.5 + Math.min(2.5, (player.level - 1) * 0.12);
+                let icon = '🤖';
 
-                if (typeRand > 0.75) {
-                    hp = 14 + player.level * 3;
-                    speed = 3.5 + (diffBonus * 0.05);
-                    icon = '🦇';
-                } else if (typeRand > 0.93) {
-                    hp = 100 + player.level * 25 + diffBonus * 12;
-                    speed = 1.3 + (diffBonus * 0.03);
-                    icon = '👾';
+                if (typeRand > 0.72 && player.level >= 2) {
+                    baseHp = 8 + (player.level - 1) * 8;
+                    baseSpeed = 2.6 + Math.min(2.0, (player.level - 1) * 0.1);
+                    icon = '🕷️';
+                } else if (typeRand > 0.92 && player.level >= 3) {
+                    baseHp = 55 + (player.level - 2) * 32;
+                    baseSpeed = 1.1 + Math.min(1.0, (player.level - 1) * 0.05);
+                    icon = '🐉';
                 }
 
-                enemies.push({ x: ex, y: ey, hp, maxHp: hp, speed, icon });
+                enemies.push({ x: ex, y: ey, hp: baseHp, maxHp: baseHp, speed: baseSpeed, icon });
             }
         }
 
@@ -604,9 +633,9 @@
             const tUpgrades = translations[currentLang].upgrades;
             let possibleUpgrades = [
                 { id: 'triple', action: () => player.projectiles = 3, available: () => player.projectiles < 3 },
-                { id: 'damage', action: () => player.damage += 7, available: () => true },
+                { id: 'damage', action: () => player.damage += 8, available: () => true },
                 { id: 'speed', action: () => player.fireRate = Math.max(10, player.fireRate - 5), available: () => player.fireRate > 12 },
-                { id: 'heal', action: () => { player.maxHp += 30; player.hp = player.maxHp; }, available: () => true },
+                { id: 'heal', action: () => { player.maxHp += 35; player.hp = player.maxHp; }, available: () => true },
                 { id: 'move', action: () => player.speed += 0.7, available: () => true }
             ];
 
@@ -704,7 +733,7 @@
                         hit = true;
                         if (en.hp <= 0) {
                             scoreKills++;
-                            gems.push({ x: en.x, y: en.y, value: 10 });
+                            dataChips.push({ x: en.x, y: en.y, value: 10 });
                             enemies.splice(j, 1);
                         }
                         break;
@@ -722,7 +751,7 @@
                 en.y += Math.sin(ang) * en.speed;
 
                 if (Math.hypot(player.x - en.x, player.y - en.y) < player.radius + 12) {
-                    player.hp -= 0.6;
+                    player.hp -= 0.5;
                     if (player.hp <= 0) {
                         gameState = 'start';
                         document.getElementById('startModal').style.display = 'flex';
@@ -730,17 +759,17 @@
                 }
             });
 
-            // Recoger gemas
-            for (let i = gems.length - 1; i >= 0; i--) {
-                let g = gems[i];
-                let dist = Math.hypot(player.x - g.x, player.y - g.y);
-                if (dist < 80) {
-                    g.x += (player.x - g.x) * 0.1;
-                    g.y += (player.y - g.y) * 0.1;
+            // Recoger Núcleos de Datos
+            for (let i = dataChips.length - 1; i >= 0; i--) {
+                let chip = dataChips[i];
+                let dist = Math.hypot(player.x - chip.x, player.y - chip.y);
+                if (dist < 100) {
+                    chip.x += (player.x - chip.x) * 0.14;
+                    chip.y += (player.y - chip.y) * 0.14;
                 }
-                if (dist < player.radius + 10) {
-                    player.exp += g.value;
-                    gems.splice(i, 1);
+                if (dist < player.radius + 12) {
+                    player.exp += chip.value;
+                    dataChips.splice(i, 1);
                     if (player.exp >= player.nextExp) {
                         player.exp -= player.nextExp;
                         player.level++;
@@ -763,7 +792,7 @@
             ctx.scale(camera.zoom, camera.zoom);
             ctx.translate(-camera.x, -camera.y);
 
-            // Suelo
+            // Suelo del mapa con rejilla de alta calidad
             ctx.fillStyle = '#0f172a';
             ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
@@ -776,34 +805,53 @@
                 ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_WIDTH, y); ctx.stroke();
             }
 
-            // Decoraciones y obstáculos
-            mapDecorations.forEach(dec => {
-                ctx.font = '20px monospace';
-                if (dec.type === 'car') {
-                    ctx.fillStyle = dec.color;
-                    ctx.fillRect(dec.x, dec.y, 40, 20);
-                } else if (dec.type === 'sign') {
-                    ctx.fillStyle = '#facc15';
-                    ctx.fillText(dec.text, dec.x, dec.y);
-                } else if (dec.type === 'jihoz') {
-                    ctx.fillText('🗿', dec.x, dec.y);
-                }
-            });
+            // --- DECORACIONES: PAREDES / BARRERAS CIBERPUNK ---
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#38bdf8';
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2.5;
 
-            obstacles.forEach(obs => {
-                ctx.fillStyle = '#334155';
-                ctx.beginPath();
-                ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
-                ctx.fill();
-            });
-
-            // Gemas
-            gems.forEach(g => {
+            walls.forEach(w => {
+                ctx.fillRect(w.x, w.y, w.width, w.height);
+                ctx.strokeRect(w.x, w.y, w.width, w.height);
                 ctx.fillStyle = '#38bdf8';
-                ctx.beginPath();
-                ctx.arc(g.x, g.y, 5, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.fillRect(w.x + 10, w.y + w.height / 2 - 2, 20, 4);
+                ctx.fillRect(w.x + w.width - 30, w.y + w.height / 2 - 2, 20, 4);
+                ctx.fillStyle = '#1e293b';
             });
+
+            // --- DECORACIONES: COCHES FUTURISTAS ---
+            cars.forEach(car => {
+                ctx.save();
+                ctx.translate(car.x + car.width / 2, car.y + car.height / 2);
+                if (car.angle) ctx.rotate(car.angle);
+
+                ctx.shadowColor = car.color;
+                ctx.shadowBlur = 12;
+                ctx.fillStyle = car.color;
+                ctx.fillRect(-car.width / 2, -car.height / 2, car.width, car.height);
+
+                ctx.fillStyle = '#0b1329';
+                ctx.fillRect(-car.width / 4, -car.height / 3, car.width / 2, car.height / 1.5);
+
+                ctx.fillStyle = '#facc15';
+                ctx.fillRect(car.width / 2 - 4, -car.height / 2 + 4, 4, 6);
+                ctx.fillRect(car.width / 2 - 4, car.height / 2 - 10, 4, 6);
+
+                ctx.restore();
+            });
+
+            ctx.shadowBlur = 0;
+
+            // --- NÚCLEOS DE DATOS (EXPERIENCIA) ---
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#38bdf8';
+            ctx.fillStyle = '#38bdf8';
+            dataChips.forEach(chip => {
+                ctx.fillRect(chip.x - 5, chip.y - 5, 10, 10);
+            });
+            ctx.shadowBlur = 0;
 
             // Balas
             ctx.fillStyle = '#facc15';
