@@ -265,7 +265,7 @@
     </div>
 
     <script>
-        // --- SISTEMA DE IDIOMAS (Inglés, Español, Tagalog) ---
+        // --- SISTEMA DE IDIOMAS ---
         const translations = {
             en: {
                 title: "RONKE SURVIVE",
@@ -379,11 +379,12 @@
             }
 
             try {
-                if (currentLang === 'en') document.getElementById('walletStatusMsg').textContent = "Initializing WalletConnect...";
-                else if (currentLang === 'es') document.getElementById('walletStatusMsg').textContent = "Inicializando WalletConnect...";
-                else document.getElementById('walletStatusMsg').textContent = "Sinisimulan ang WalletConnect...";
-                
+                document.getElementById('walletStatusMsg').textContent = "Initializing WalletConnect...";
                 document.getElementById('walletStatusMsg').style.color = '#facc15';
+
+                if (typeof window.EthereumProvider === 'undefined') {
+                    throw new Error("WalletConnect SDK not loaded.");
+                }
 
                 const provider = await window.EthereumProvider.init({
                     projectId: projectId,
@@ -402,9 +403,7 @@
                     let address = accounts[0];
                     sessionUser = address.substring(0, 6) + '...' + address.substring(address.length - 4);
                     document.getElementById('userDisplay').textContent = sessionUser;
-                    
-                    let connText = currentLang === 'en' ? 'Connected' : (currentLang === 'es' ? 'Conectado' : 'Konektado');
-                    document.getElementById('walletStatusMsg').textContent = `${connText}: ${sessionUser}`;
+                    document.getElementById('walletStatusMsg').textContent = `Connected: ${sessionUser}`;
                     document.getElementById('walletStatusMsg').style.color = '#34d399';
                     
                     setTimeout(() => {
@@ -413,20 +412,20 @@
                 }
             } catch (error) {
                 console.error("WalletConnect error:", error);
-                if (currentLang === 'en') document.getElementById('walletStatusMsg').textContent = "Connection cancelled or failed.";
-                else if (currentLang === 'es') document.getElementById('walletStatusMsg').textContent = "Conexión cancelada o fallida.";
-                else document.getElementById('walletStatusMsg').textContent = "Kinansela o nabigo ang koneksyon.";
-                
+                document.getElementById('walletStatusMsg').textContent = "Connection failed / skipped. Starting as Guest.";
                 document.getElementById('walletStatusMsg').style.color = '#f87171';
+                setTimeout(() => {
+                    playAsGuest();
+                }, 1200);
             }
         }
 
-        // Enlazar botones mediante JS seguro
+        // Asignación segura de eventos UI
         document.getElementById('playGuestBtn').addEventListener('click', playAsGuest);
         document.getElementById('connectWalletBtn').addEventListener('click', connectWalletConnect);
         document.getElementById('lang-selector').addEventListener('click', toggleLanguage);
 
-        // Jugador: Tu Mono Azul (Ronke Ape)
+        // Jugador: Mono Azul (Ronke Ape)
         let player = {
             x: WORLD_WIDTH / 2,
             y: WORLD_HEIGHT / 2,
@@ -477,11 +476,14 @@
             targetScreenY = e.clientY;
         });
 
-        window.addEventListener('pointerup', () => {
+        const resetPointer = () => {
             isPointerActive = false;
             targetScreenX = null;
             targetScreenY = null;
-        });
+        };
+
+        window.addEventListener('pointerup', resetPointer);
+        window.addEventListener('pointercancel', resetPointer);
 
         let enemies = [];
         let bullets = [];
@@ -530,6 +532,7 @@
 
         function startGame() {
             document.getElementById('startModal').style.display = 'none';
+            document.getElementById('upgradeModal').style.display = 'none';
             gameState = 'playing';
             scoreKills = 0;
             gameTime = 0;
@@ -616,12 +619,14 @@
                 let div = document.createElement('div');
                 div.className = 'upgrade-option';
                 div.innerHTML = `<div class="upgrade-name">${textObj.name}</div><div class="upgrade-desc">${textObj.desc}</div>`;
-                div.onclick = () => {
+                
+                div.addEventListener('click', () => {
                     opt.action();
                     document.getElementById('upgradeModal').style.display = 'none';
                     gameState = 'playing';
                     updateHUD();
-                };
+                });
+                
                 container.appendChild(div);
             });
 
@@ -888,4 +893,3 @@
     </script>
 </body>
 </html>
-
