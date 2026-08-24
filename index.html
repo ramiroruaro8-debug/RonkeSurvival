@@ -40,12 +40,13 @@
             right: 15px;
             background: #1e293b;
             color: #38bdf8;
-            border: 1px solid #38bdf8;
-            padding: 6px 12px;
-            border-radius: 5px;
+            border: 2px solid #38bdf8;
+            padding: 6px 14px;
+            border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
             z-index: 200;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
 
         #hud {
@@ -125,6 +126,12 @@
             color: #facc15;
             font-size: 20px;
             font-weight: bold;
+        }
+
+        .modal-text {
+            color: #94a3b8;
+            font-size: 12px;
+            line-height: 1.4;
         }
 
         .modal-input {
@@ -233,6 +240,7 @@
     <div id="startModal" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-title" id="txt-title">RONKE SURVIVAL</div>
+            <div class="modal-text" id="txt-desc">Open world 3000x3000px with cars, signs, Jihoz statues and cybernetic hordes.</div>
             
             <!-- Play as Guest Option -->
             <button class="modal-btn guest-btn" id="txt-play" onclick="playAsGuest()">🎮 PLAY AS GUEST</button>
@@ -240,7 +248,7 @@
             <div class="divider"></div>
 
             <!-- WalletConnect Option -->
-            <div class="wallet-label" id="txt-wallet-label" style="text-align: left; font-size: 12px; color: #94a3b8;">WalletConnect (Ronin / Mobile):</div>
+            <div class="modal-text" id="txt-wallet-label" style="text-align: left; margin-bottom: -4px;"><b>WalletConnect (Ronin / Mobile):</b></div>
             <input type="text" id="wcProjectIdInput" class="modal-input" value="3a8170812b534d0ff9d794f19a901d64">
             
             <div class="wallet-status" id="walletStatusMsg">Status: Waiting for connection</div>
@@ -251,60 +259,86 @@
     <div id="upgradeModal" class="modal-overlay" style="display: none;">
         <div class="modal-card">
             <div class="modal-title" id="txt-levelup">LEVEL UP!</div>
-            <div class="modal-text" id="txt-upgradedesc" style="color: #94a3b8; font-size: 12px;">Choose an upgrade for your Ronke:</div>
+            <div class="modal-text" id="txt-upgradedesc">Choose an upgrade for your Blue Dog Ronke:</div>
             <div id="upgradeOptionsContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
     </div>
 
     <script>
-        // --- SISTEMA DE IDIOMAS (Inglés, Español, Tagalo) ---
+        // --- SISTEMA DE IDIOMAS (Inglés, Español, Tagalog) ---
         const translations = {
             en: {
                 title: "RONKE SURVIVAL",
+                desc: "3000x3000px open world with cars, signs, Jihoz statues and cybernetic hordes.",
                 play: "🎮 PLAY AS GUEST",
                 walletLabel: "WalletConnect (Ronin / Mobile):",
                 statusWait: "Status: Waiting for connection",
                 connect: "🔗 CONNECT RONIN WALLET",
                 levelup: "LEVEL UP!",
-                upgradedesc: "Choose an upgrade for your Ronke:",
-                langButton: "🌐 Español"
+                upgradedesc: "Choose an upgrade for your Blue Dog Ronke:",
+                langButton: "🌐 Español",
+                upgrades: {
+                    triple: { name: "💥 Triple Shot", desc: "Fires 3 projectiles simultaneously in a spread pattern." },
+                    damage: { name: "🔥 Damage Up (+7)", desc: "Increases the damage power of your attacks." },
+                    speed: { name: "⚡ Attack Speed", desc: "Shoot bullets much faster." },
+                    heal: { name: "❤️ Full Heal & Max HP", desc: "Restores all health and increases maximum HP by 30." },
+                    move: { name: "👟 Speed Boost", desc: "Move faster across the expanded arena." }
+                }
             },
             es: {
                 title: "RONKE SURVIVAL",
+                desc: "Mundo abierto de 3000x3000px con autos, carteles, estatuas de Jihoz y hordas cibernéticas.",
                 play: "🎮 JUGAR DE INVITADO",
                 walletLabel: "WalletConnect (Ronin / Mobile):",
                 statusWait: "Status: Esperando conexión",
                 connect: "🔗 CONECTAR RONIN WALLET",
                 levelup: "¡SUBIDA DE NIVEL!",
-                upgradedesc: "Elige una mejora para tu Ronke:",
-                langButton: "🌐 Tagalog"
+                upgradedesc: "Elige una mejora para tu Perro Azul Ronke:",
+                langButton: "🌐 Tagalog",
+                upgrades: {
+                    triple: { name: "💥 Triple Disparo", desc: "Dispara 3 proyectiles simultáneamente en abanico." },
+                    damage: { name: "🔥 Más Daño (+7)", desc: "Aumenta el poder de daño de tus ataques." },
+                    speed: { name: "⚡ Velocidad de Ataque", desc: "Dispara balas mucho más rápido." },
+                    heal: { name: "❤️ Curación Total y Vida Máx", desc: "Restaura toda la salud y aumenta el HP máximo en 30." },
+                    move: { name: "👟 Velocidad de Movimiento", desc: "Múevete más rápido por la arena ampliada." }
+                }
             },
             tl: {
                 title: "RONKE SURVIVAL",
+                desc: "3000x3000px bukas na mundo na may mga kotse, karatula, Jihoz statues, at cybernetic hordes.",
                 play: "🎮 MAGLARO BILANG GUEST",
                 walletLabel: "WalletConnect (Ronin / Mobile):",
                 statusWait: "Status: Naghihintay ng koneksyon",
                 connect: "🔗 KUMUNEKTA SA RONIN WALLET",
                 levelup: "UMANGAT SA ANTAS!",
-                upgradedesc: "Pumili ng pagpapahusay para sa iyong Ronke:",
-                langButton: "🌐 English"
+                upgradedesc: "Pumili ng pagpapahusay para sa iyong Blue Dog Ronke:",
+                langButton: "🌐 English",
+                upgrades: {
+                    triple: { name: "💥 Triple Shot", desc: "Bumabaril ng 3 projectiles nang sabay-sabay sa spread pattern." },
+                    damage: { name: "🔥 Dagdag Pinsala (+7)", desc: "Pinatataas ang kapangyarihan ng pag-atake." },
+                    speed: { name: "⚡ Bilis ng Pag-atake", desc: "Mas mabilis na pagbaril ng mga bala." },
+                    heal: { name: "❤️ Buong Pagpapagaling & Max HP", desc: "Nagpapanumbalik ng HP at nagpapataas ng Max HP nang 30." },
+                    move: { name: "👟 Bilis ng Pagkilos", desc: "Mas mabilis na paggalaw sa buong arena." }
+                }
             }
         };
 
-        let currentLang = 'en'; // Inglés por defecto
+        let currentLang = 'en';
 
         function toggleLanguage() {
             if (currentLang === 'en') currentLang = 'es';
             else if (currentLang === 'es') currentLang = 'tl';
             else currentLang = 'en';
             updateTexts();
+            if (gameState === 'upgrade') triggerLevelUp();
         }
 
         function updateTexts() {
             const t = translations[currentLang];
             document.getElementById('txt-title').innerText = t.title;
+            document.getElementById('txt-desc').innerText = t.desc;
             document.getElementById('txt-play').innerText = t.play;
-            document.getElementById('txt-wallet-label').innerText = t.walletLabel;
+            document.getElementById('txt-wallet-label').innerHTML = `<b>${t.walletLabel}</b>`;
             document.getElementById('walletStatusMsg').innerText = t.statusWait;
             document.getElementById('txt-connect').innerText = t.connect;
             document.getElementById('txt-levelup').innerText = t.levelup;
@@ -353,7 +387,7 @@
 
                 const provider = await window.EthereumProvider.init({
                     projectId: projectId,
-                    chains: [2020], // Ronin Chain ID
+                    chains: [2020],
                     optionalChains: [1, 2020],
                     rpcMap: {
                         2020: "https://api.roninchain.com/rpc"
@@ -387,6 +421,7 @@
             }
         }
 
+        // Jugador: Tu perro azul (perros son los azules en el juego)
         let player = {
             x: WORLD_WIDTH / 2,
             y: WORLD_HEIGHT / 2,
@@ -466,18 +501,7 @@
                     type: 'car',
                     x: Math.random() * WORLD_WIDTH,
                     y: Math.random() * WORLD_HEIGHT,
-                    angle: Math.random() * Math.PI * 2,
                     color: Math.random() > 0.5 ? '#38bdf8' : '#ef4444'
-                });
-            }
-
-            for (let i = 0; i < 35; i++) {
-                mapDecorations.push({
-                    type: 'roninR',
-                    x: Math.random() * WORLD_WIDTH,
-                    y: Math.random() * WORLD_HEIGHT,
-                    size: 15 + Math.random() * 15,
-                    phase: Math.random() * Math.PI * 2
                 });
             }
 
@@ -494,8 +518,7 @@
                 mapDecorations.push({
                     type: 'jihoz',
                     x: Math.random() * WORLD_WIDTH,
-                    y: Math.random() * WORLD_HEIGHT,
-                    phase: Math.random() * Math.PI * 2
+                    y: Math.random() * WORLD_HEIGHT
                 });
             }
         }
@@ -570,7 +593,246 @@
             let container = document.getElementById('upgradeOptionsContainer');
             container.innerHTML = '';
 
+            const tUpgrades = translations[currentLang].upgrades;
             let possibleUpgrades = [
-                { 
-                    name: currentLang === 'en' ? '💥 Triple Shot' : (currentLang === 'es' ? '💥 Triple Disparo' : '💥 Triple Shot'), 
-                    desc: currentLang === 'en' ? 'Fires 3 pro
+                { id: 'triple', action: () => player.projectiles = 3, available: () => player.projectiles < 3 },
+                { id: 'damage', action: () => player.damage += 7, available: () => true },
+                { id: 'speed', action: () => player.fireRate = Math.max(10, player.fireRate - 5), available: () => player.fireRate > 12 },
+                { id: 'heal', action: () => { player.maxHp += 30; player.hp = player.maxHp; }, available: () => true },
+                { id: 'move', action: () => player.speed += 0.7, available: () => true }
+            ];
+
+            let validUpgrades = possibleUpgrades.filter(u => u.available());
+            validUpgrades.sort(() => Math.random() - 0.5);
+            let choices = validUpgrades.slice(0, 3);
+
+            choices.forEach(opt => {
+                let textObj = tUpgrades[opt.id];
+                let div = document.createElement('div');
+                div.className = 'upgrade-option';
+                div.innerHTML = `<div class="upgrade-name">${textObj.name}</div><div class="upgrade-desc">${textObj.desc}</div>`;
+                div.onclick = () => {
+                    opt.action();
+                    document.getElementById('upgradeModal').style.display = 'none';
+                    gameState = 'playing';
+                    updateHUD();
+                };
+                container.appendChild(div);
+            });
+
+            document.getElementById('upgradeModal').style.display = 'flex';
+        }
+
+        function update() {
+            if (gameState !== 'playing') return;
+            gameTime++;
+
+            let dx = 0, dy = 0;
+
+            if (isPointerActive && targetScreenX !== null) {
+                let centerX = width / 2;
+                let centerY = height / 2;
+                let distX = targetScreenX - centerX;
+                let distY = targetScreenY - centerY;
+                let distToTarget = Math.hypot(distX, distY);
+                if (distToTarget > 6) {
+                    dx = distX / distToTarget;
+                    dy = distY / distToTarget;
+                }
+            }
+
+            if (dx !== 0 || dy !== 0) {
+                player.x += dx * player.speed;
+                player.y += dy * player.speed;
+            }
+
+            player.x = Math.max(player.radius, Math.min(WORLD_WIDTH - player.radius, player.x));
+            player.y = Math.max(player.radius, Math.min(WORLD_HEIGHT - player.radius, player.y));
+
+            // Disparos automáticos
+            player.fireTimer++;
+            if (player.fireTimer >= player.fireRate) {
+                player.fireTimer = 0;
+                let closestEnemy = null;
+                let minDist = player.range;
+
+                enemies.forEach(en => {
+                    let d = Math.hypot(en.x - player.x, en.y - player.y);
+                    if (d < minDist) {
+                        minDist = d;
+                        closestEnemy = en;
+                    }
+                });
+
+                if (closestEnemy) {
+                    let angle = Math.atan2(closestEnemy.y - player.y, closestEnemy.x - player.x);
+                    if (player.projectiles === 1) {
+                        bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * player.bulletSpeed, vy: Math.sin(angle) * player.bulletSpeed, damage: player.damage });
+                    } else {
+                        for (let i = -1; i <= 1; i++) {
+                            let spreadAngle = angle + i * 0.2;
+                            bullets.push({ x: player.x, y: player.y, vx: Math.cos(spreadAngle) * player.bulletSpeed, vy: Math.sin(spreadAngle) * player.bulletSpeed, damage: player.damage });
+                        }
+                    }
+                }
+            }
+
+            // Actualizar balas
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i];
+                b.x += b.vx;
+                b.y += b.vy;
+                if (b.x < 0 || b.x > WORLD_WIDTH || b.y < 0 || b.y > WORLD_HEIGHT) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                let hit = false;
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    let en = enemies[j];
+                    if (Math.hypot(b.x - en.x, b.y - en.y) < 18) {
+                        en.hp -= b.damage;
+                        hit = true;
+                        if (en.hp <= 0) {
+                            scoreKills++;
+                            gems.push({ x: en.x, y: en.y, value: 10 });
+                            enemies.splice(j, 1);
+                        }
+                        break;
+                    }
+                }
+                if (hit) {
+                    bullets.splice(i, 1);
+                }
+            }
+
+            // Actualizar enemigos
+            enemies.forEach(en => {
+                let ang = Math.atan2(player.y - en.y, player.x - en.x);
+                en.x += Math.cos(ang) * en.speed;
+                en.y += Math.sin(ang) * en.speed;
+
+                if (Math.hypot(player.x - en.x, player.y - en.y) < player.radius + 12) {
+                    player.hp -= 0.6;
+                    if (player.hp <= 0) {
+                        gameState = 'start';
+                        document.getElementById('startModal').style.display = 'flex';
+                    }
+                }
+            });
+
+            // Recoger gemas de experiencia
+            for (let i = gems.length - 1; i >= 0; i--) {
+                let g = gems[i];
+                let dist = Math.hypot(player.x - g.x, player.y - g.y);
+                if (dist < 80) {
+                    g.x += (player.x - g.x) * 0.1;
+                    g.y += (player.y - g.y) * 0.1;
+                }
+                if (dist < player.radius + 10) {
+                    player.exp += g.value;
+                    gems.splice(i, 1);
+                    if (player.exp >= player.nextExp) {
+                        player.exp -= player.nextExp;
+                        player.level++;
+                        player.nextExp = Math.floor(player.nextExp * 1.35);
+                        triggerLevelUp();
+                    }
+                }
+            }
+
+            spawnEnemies();
+            camera.update();
+            updateHUD();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            if (gameState !== 'playing') return;
+
+            ctx.save();
+            ctx.scale(camera.zoom, camera.zoom);
+            ctx.translate(-camera.x, -camera.y);
+
+            // Suelo y cuadrícula del mundo
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 2;
+            for (let x = 0; x < WORLD_WIDTH; x += 150) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, WORLD_HEIGHT); ctx.stroke();
+            }
+            for (let y = 0; y < WORLD_HEIGHT; y += 150) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_WIDTH, y); ctx.stroke();
+            }
+
+            // Decoraciones y obstáculos
+            mapDecorations.forEach(dec => {
+                ctx.font = '20px monospace';
+                if (dec.type === 'car') {
+                    ctx.fillStyle = dec.color;
+                    ctx.fillRect(dec.x, dec.y, 40, 20);
+                } else if (dec.type === 'sign') {
+                    ctx.fillStyle = '#facc15';
+                    ctx.fillText(dec.text, dec.x, dec.y);
+                } else if (dec.type === 'jihoz') {
+                    ctx.fillText('🗿', dec.x, dec.y);
+                }
+            });
+
+            obstacles.forEach(obs => {
+                ctx.fillStyle = '#334155';
+                ctx.beginPath();
+                ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Gemas
+            gems.forEach(g => {
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                ctx.arc(g.x, g.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Balas
+            ctx.fillStyle = '#facc15';
+            bullets.forEach(b => {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Enemigos (👹, 🦇, 👾)
+            enemies.forEach(en => {
+                ctx.font = '24px monospace';
+                ctx.fillText(en.icon, en.x - 12, en.y + 8);
+            });
+
+            // Tu Perro Azul (Personaje principal / Mono azul) 🐶
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+
+            ctx.font = '22px monospace';
+            ctx.fillText('🐶', player.x - 12, player.y + 8);
+
+            ctx.restore();
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        updateTexts();
+        loop();
+    </script>
+</body>
+</html>
+
