@@ -15,7 +15,6 @@
             box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: none;
         }
 
         body, html {
@@ -31,6 +30,7 @@
             width: 100vw;
             height: 100vh;
             background: #0f172a;
+            touch-action: none;
         }
 
         /* Selector de Idioma */
@@ -218,7 +218,7 @@
 <body>
 
     <!-- Botón de cambio de idioma -->
-    <button id="lang-selector" onclick="toggleLanguage()">🌐 English</button>
+    <button id="lang-selector">🌐 English</button>
 
     <div id="expBarContainer">
         <div id="expBarFill"></div>
@@ -243,7 +243,7 @@
             <div class="modal-text" id="txt-desc">Open world 3000x3000px with cars, signs, Jihoz statues and cybernetic hordes.</div>
             
             <!-- Play as Guest Option -->
-            <button class="modal-btn guest-btn" id="txt-play" onclick="playAsGuest()">🎮 PLAY AS GUEST</button>
+            <button class="modal-btn guest-btn" id="playGuestBtn">🎮 PLAY AS GUEST</button>
             
             <div class="divider"></div>
 
@@ -252,7 +252,7 @@
             <input type="text" id="wcProjectIdInput" class="modal-input" value="3a8170812b534d0ff9d794f19a901d64">
             
             <div class="wallet-status" id="walletStatusMsg">Status: Waiting for connection</div>
-            <button class="modal-btn" id="txt-connect" onclick="connectWalletConnect()">🔗 CONNECT RONIN WALLET</button>
+            <button class="modal-btn" id="connectWalletBtn">🔗 CONNECT RONIN WALLET</button>
         </div>
     </div>
 
@@ -337,10 +337,10 @@
             const t = translations[currentLang];
             document.getElementById('txt-title').innerText = t.title;
             document.getElementById('txt-desc').innerText = t.desc;
-            document.getElementById('txt-play').innerText = t.play;
+            document.getElementById('playGuestBtn').innerText = t.play;
             document.getElementById('txt-wallet-label').innerHTML = `<b>${t.walletLabel}</b>`;
             document.getElementById('walletStatusMsg').innerText = t.statusWait;
-            document.getElementById('txt-connect').innerText = t.connect;
+            document.getElementById('connectWalletBtn').innerText = t.connect;
             document.getElementById('txt-levelup').innerText = t.levelup;
             document.getElementById('txt-upgradedesc').innerText = t.upgradedesc;
             document.getElementById('lang-selector').innerText = t.langButton;
@@ -420,6 +420,11 @@
                 document.getElementById('walletStatusMsg').style.color = '#f87171';
             }
         }
+
+        // Enlazar botones mediante JS seguro
+        document.getElementById('playGuestBtn').addEventListener('click', playAsGuest);
+        document.getElementById('connectWalletBtn').addEventListener('click', connectWalletConnect);
+        document.getElementById('lang-selector').addEventListener('click', toggleLanguage);
 
         // Jugador: Tu Mono Azul (Ronke Ape)
         let player = {
@@ -548,4 +553,339 @@
         function updateHUD() {
             document.getElementById('lvlDisplay').textContent = player.level;
             document.getElementById('killsDisplay').textContent = scoreKills;
-            document.getElementById('
+            document.getElementById('hpDisplay').textContent = `${Math.max(0, Math.floor(player.hp))}/${player.maxHp}`;
+            let pct = (player.exp / player.nextExp) * 100;
+            document.getElementById('expBarFill').style.width = `${Math.min(100, pct)}%`;
+        }
+
+        let spawnTimer = 0;
+        function spawnEnemies() {
+            spawnTimer++;
+            let interval = Math.max(10, 45 - Math.floor(gameTime / 400));
+            if (spawnTimer >= interval) {
+                spawnTimer = 0;
+                let angle = Math.random() * Math.PI * 2;
+                let viewSpan = Math.max(width, height) / camera.zoom;
+                let distance = viewSpan * 0.6 + Math.random() * 200;
+                let ex = player.x + Math.cos(angle) * distance;
+                let ey = player.y + Math.sin(angle) * distance;
+
+                ex = Math.max(30, Math.min(WORLD_WIDTH - 30, ex));
+                ey = Math.max(30, Math.min(WORLD_HEIGHT - 30, ey));
+
+                let typeRand = Math.random();
+                let diffBonus = Math.floor(gameTime / 500);
+                let hp = 22 + player.level * 6 + diffBonus * 4;
+                let speed = 2.0 + Math.random() * 0.8 + (diffBonus * 0.05);
+                let icon = '👹';
+
+                if (typeRand > 0.75) {
+                    hp = 14 + player.level * 3;
+                    speed = 3.5 + (diffBonus * 0.05);
+                    icon = '🦇';
+                } else if (typeRand > 0.93) {
+                    hp = 100 + player.level * 25 + diffBonus * 12;
+                    speed = 1.3 + (diffBonus * 0.03);
+                    icon = '👾';
+                }
+
+                enemies.push({ x: ex, y: ey, hp, maxHp: hp, speed, icon });
+            }
+        }
+
+        function triggerLevelUp() {
+            gameState = 'upgrade';
+            let container = document.getElementById('upgradeOptionsContainer');
+            container.innerHTML = '';
+
+            const tUpgrades = translations[currentLang].upgrades;
+            let possibleUpgrades = [
+                { id: 'triple', action: () => player.projectiles = 3, available: () => player.projectiles < 3 },
+                { id: 'damage', action: () => player.damage += 7, available: () => true },
+                { id: 'speed', action: () => player.fireRate = Math.max(10, player.fireRate - 5), available: () => player.fireRate > 12 },
+                { id: 'heal', action: () => { player.maxHp += 30; player.hp = player.maxHp; }, available: () => true },
+                { id: 'move', action: () => player.speed += 0.7, available: () => true }
+            ];
+
+            let validUpgrades = possibleUpgrades.filter(u => u.available());
+            validUpgrades.sort(() => Math.random() - 0.5);
+            let choices = validUpgrades.slice(0, 3);
+
+            choices.forEach(opt => {
+                let textObj = tUpgrades[opt.id];
+                let div = document.createElement('div');
+                div.className = 'upgrade-option';
+                div.innerHTML = `<div class="upgrade-name">${textObj.name}</div><div class="upgrade-desc">${textObj.desc}</div>`;
+                div.onclick = () => {
+                    opt.action();
+                    document.getElementById('upgradeModal').style.display = 'none';
+                    gameState = 'playing';
+                    updateHUD();
+                };
+                container.appendChild(div);
+            });
+
+            document.getElementById('upgradeModal').style.display = 'flex';
+        }
+
+        function update() {
+            if (gameState !== 'playing') return;
+            gameTime++;
+
+            let dx = 0, dy = 0;
+
+            if (isPointerActive && targetScreenX !== null) {
+                let centerX = width / 2;
+                let centerY = height / 2;
+                let distX = targetScreenX - centerX;
+                let distY = targetScreenY - centerY;
+                let distToTarget = Math.hypot(distX, distY);
+                if (distToTarget > 6) {
+                    dx = distX / distToTarget;
+                    dy = distY / distToTarget;
+                }
+            }
+
+            if (dx !== 0 || dy !== 0) {
+                player.x += dx * player.speed;
+                player.y += dy * player.speed;
+            }
+
+            player.x = Math.max(player.radius, Math.min(WORLD_WIDTH - player.radius, player.x));
+            player.y = Math.max(player.radius, Math.min(WORLD_HEIGHT - player.radius, player.y));
+
+            // Disparos automáticos
+            player.fireTimer++;
+            if (player.fireTimer >= player.fireRate) {
+                player.fireTimer = 0;
+                let closestEnemy = null;
+                let minDist = player.range;
+
+                enemies.forEach(en => {
+                    let d = Math.hypot(en.x - player.x, en.y - player.y);
+                    if (d < minDist) {
+                        minDist = d;
+                        closestEnemy = en;
+                    }
+                });
+
+                if (closestEnemy) {
+                    let angle = Math.atan2(closestEnemy.y - player.y, closestEnemy.x - player.x);
+                    if (player.projectiles === 1) {
+                        bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * player.bulletSpeed, vy: Math.sin(angle) * player.bulletSpeed, damage: player.damage });
+                    } else {
+                        for (let i = -1; i <= 1; i++) {
+                            let spreadAngle = angle + i * 0.2;
+                            bullets.push({ x: player.x, y: player.y, vx: Math.cos(spreadAngle) * player.bulletSpeed, vy: Math.sin(spreadAngle) * player.bulletSpeed, damage: player.damage });
+                        }
+                    }
+                }
+            }
+
+            // Actualizar balas
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i];
+                b.x += b.vx;
+                b.y += b.vy;
+                if (b.x < 0 || b.x > WORLD_WIDTH || b.y < 0 || b.y > WORLD_HEIGHT) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                let hit = false;
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    let en = enemies[j];
+                    if (Math.hypot(b.x - en.x, b.y - en.y) < 18) {
+                        en.hp -= b.damage;
+                        hit = true;
+                        if (en.hp <= 0) {
+                            scoreKills++;
+                            gems.push({ x: en.x, y: en.y, value: 10 });
+                            enemies.splice(j, 1);
+                        }
+                        break;
+                    }
+                }
+                if (hit) {
+                    bullets.splice(i, 1);
+                }
+            }
+
+            // Actualizar enemigos
+            enemies.forEach(en => {
+                let ang = Math.atan2(player.y - en.y, player.x - en.x);
+                en.x += Math.cos(ang) * en.speed;
+                en.y += Math.sin(ang) * en.speed;
+
+                if (Math.hypot(player.x - en.x, player.y - en.y) < player.radius + 12) {
+                    player.hp -= 0.6;
+                    if (player.hp <= 0) {
+                        gameState = 'start';
+                        document.getElementById('startModal').style.display = 'flex';
+                    }
+                }
+            });
+
+            // Recoger gemas
+            for (let i = gems.length - 1; i >= 0; i--) {
+                let g = gems[i];
+                let dist = Math.hypot(player.x - g.x, player.y - g.y);
+                if (dist < 80) {
+                    g.x += (player.x - g.x) * 0.1;
+                    g.y += (player.y - g.y) * 0.1;
+                }
+                if (dist < player.radius + 10) {
+                    player.exp += g.value;
+                    gems.splice(i, 1);
+                    if (player.exp >= player.nextExp) {
+                        player.exp -= player.nextExp;
+                        player.level++;
+                        player.nextExp = Math.floor(player.nextExp * 1.35);
+                        triggerLevelUp();
+                    }
+                }
+            }
+
+            spawnEnemies();
+            camera.update();
+            updateHUD();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            if (gameState !== 'playing') return;
+
+            ctx.save();
+            ctx.scale(camera.zoom, camera.zoom);
+            ctx.translate(-camera.x, -camera.y);
+
+            // Suelo
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 2;
+            for (let x = 0; x < WORLD_WIDTH; x += 150) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, WORLD_HEIGHT); ctx.stroke();
+            }
+            for (let y = 0; y < WORLD_HEIGHT; y += 150) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_WIDTH, y); ctx.stroke();
+            }
+
+            // Decoraciones y obstáculos
+            mapDecorations.forEach(dec => {
+                ctx.font = '20px monospace';
+                if (dec.type === 'car') {
+                    ctx.fillStyle = dec.color;
+                    ctx.fillRect(dec.x, dec.y, 40, 20);
+                } else if (dec.type === 'sign') {
+                    ctx.fillStyle = '#facc15';
+                    ctx.fillText(dec.text, dec.x, dec.y);
+                } else if (dec.type === 'jihoz') {
+                    ctx.fillText('🗿', dec.x, dec.y);
+                }
+            });
+
+            obstacles.forEach(obs => {
+                ctx.fillStyle = '#334155';
+                ctx.beginPath();
+                ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Gemas
+            gems.forEach(g => {
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                ctx.arc(g.x, g.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Balas
+            ctx.fillStyle = '#facc15';
+            bullets.forEach(b => {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Enemigos
+            enemies.forEach(en => {
+                ctx.font = '24px monospace';
+                ctx.fillText(en.icon, en.x - 12, en.y + 8);
+            });
+
+            // --- TU MONO AZUL (RONKE APE) ---
+            
+            // 1. Orejas
+            ctx.fillStyle = '#1d4ed8';
+            ctx.beginPath();
+            ctx.arc(player.x - 17, player.y, 7, 0, Math.PI * 2);
+            ctx.arc(player.x + 17, player.y, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // 2. Cabeza
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#38bdf8';
+            ctx.stroke();
+
+            // 3. Arrugas de la frente
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(player.x - 10, player.y - 12);
+            ctx.lineTo(player.x + 10, player.y - 12);
+            ctx.moveTo(player.x - 7, player.y - 8);
+            ctx.lineTo(player.x + 7, player.y - 8);
+            ctx.stroke();
+
+            // 4. Parches de los ojos
+            ctx.fillStyle = '#93c5fd';
+            ctx.beginPath();
+            ctx.arc(player.x - 6, player.y - 2, 5.5, 0, Math.PI * 2);
+            ctx.arc(player.x + 6, player.y - 2, 5.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 5. Pupilas
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(player.x - 6, player.y - 2, 2, 0, Math.PI * 2);
+            ctx.arc(player.x + 6, player.y - 2, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 6. Hocico gris
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath();
+            ctx.ellipse(player.x, player.y + 7, 13, 9, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // 7. Labios
+            ctx.strokeStyle = '#fbcfe8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y + 11, 6, 0.1, Math.PI - 0.1, false);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        updateTexts();
+        loop();
+    </script>
+</body>
+</html>
+
