@@ -2,87 +2,153 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ronke Survival - Guest & WalletConnect Edition</title>
-    
-    <!-- WalletConnect Ethereum Provider CDN -->
-    <script src="https://unpkg.com/@walletconnect/ethereum-provider@2.11.2/dist/index.umd.js"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ronke Survival</title>
     <style>
-        * {
+        body {
             margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
-        }
-
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #0b1329;
-            font-family: 'Courier New', Courier, monospace;
-        }
-
-        #gameCanvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-            background: #0f172a;
-        }
-
-        #hud {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            right: 12px;
+            background-color: #0b1120;
+            color: #ffffff;
+            font-family: monospace;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            pointer-events: none;
-            z-index: 10;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
         }
-
-        .hud-card {
-            background: rgba(15, 23, 42, 0.85);
-            border: 2px solid #38bdf8;
-            border-radius: 6px;
-            padding: 8px 14px;
-            color: #f8fafc;
-            font-size: 13px;
-            font-weight: bold;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            display: flex;
-            gap: 15px;
-        }
-
-        .hud-stat span {
-            color: #38bdf8;
-        }
-
-        #expBarContainer {
+        /* Estilo del selector de idioma */
+        #lang-selector {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 8px;
+            top: 15px;
+            right: 15px;
             background: #1e293b;
-            z-index: 20;
+            color: #38bdf8;
+            border: 1px solid #38bdf8;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .modal {
+            background: #0f172a;
+            border: 2px solid #38bdf8;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+        }
+        h1 {
+            color: #facc15;
+            letter-spacing: 2px;
+            font-size: 24px;
+        }
+        p {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .btn-wallet {
+            background: #3b82f6;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: white;
+            border-radius: 5px;
+            margin-top: 10px;
+            box-sizing: border-box;
+            font-family: monospace;
+        }
+        .status {
+            color: #f87171;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Botón para cambiar de idioma -->
+    <button id="lang-selector" onclick="toggleLanguage()">ES / EN</button>
+
+    <div class="modal">
+        <h1 id="txt-title">RONKE SURVIVAL</h1>
+        <p id="txt-desc">3000x3000px open world with cars, billboards, Jihoz statues and cybernetic hordes.</p>
+        
+        <button class="btn" id="txt-play">🎮 PLAY AS GUEST</button>
+        
+        <p id="txt-wallet-label" style="margin-top: 20px; text-align: left;">WalletConnect (Ronin / Mobile):</p>
+        <input type="text" value="3a8170812b534d0ff9d794f19a901d64" readonly>
+        
+        <div class="status" id="txt-status">Status: Waiting for connection</div>
+        
+        <button class="btn btn-wallet" id="txt-connect">🔗 CONNECT RONIN WALLET</button>
+    </div>
+
+    <script>
+        // Diccionario de idiomas
+        const translations = {
+            en: {
+                title: "RONKE SURVIVAL",
+                desc: "3000x3000px open world with cars, billboards, Jihoz statues and cybernetic hordes.",
+                play: "🎮 PLAY AS GUEST",
+                walletLabel: "WalletConnect (Ronin / Mobile):",
+                status: "Status: Waiting for connection",
+                connect: "🔗 CONNECT RONIN WALLET",
+                langButton: "🌐 Español"
+            },
+            es: {
+                title: "RONKE SURVIVAL",
+                desc: "Mundo abierto de 3000x3000px con autos, carteles, estatuas de Jihoz y hordas cibernéticas.",
+                play: "🎮 JUGAR DE INVITADO",
+                walletLabel: "WalletConnect (Ronin / Mobile):",
+                status: "Status: Esperando conexión",
+                connect: "🔗 CONECTAR RONIN WALLET",
+                langButton: "🌐 English"
+            }
+        };
+
+        // Idioma predeterminado: INGLÉS ('en')
+        let currentLang = 'en';
+
+        function toggleLanguage() {
+            // Cambiar idioma actual
+            currentLang = currentLang === 'en' ? 'es' : 'en';
+            updateTexts();
         }
 
-        #expBarFill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #38bdf8, #ef4444);
-            transition: width 0.2s ease;
+        function updateTexts() {
+            const t = translations[currentLang];
+            document.getElementById('txt-title').innerText = t.title;
+            document.getElementById('txt-desc').innerText = t.desc;
+            document.getElementById('txt-play').innerText = t.play;
+            document.getElementById('txt-wallet-label').innerText = t.walletLabel;
+            document.getElementById('txt-status').innerText = t.status;
+            document.getElementById('txt-connect').innerText = t.connect;
+            document.getElementById('lang-selector').innerText = t.langButton;
         }
 
-        .modal-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
+        // Ejecutar al cargar para asegurar que inicie en Inglés
+        updateTexts();
+    </script>
+</body>
+</html>
             width: 100%;
             height: 100%;
             background: rgba(11, 19, 41, 0.95);
