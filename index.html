@@ -2,21 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ronke Survival</title>
     <style>
-        body {
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body, html {
             margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
             background-color: #0b1120;
             color: #ffffff;
             font-family: monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
             overflow: hidden;
         }
+        /* Selector de Idioma */
         #lang-selector {
             position: absolute;
             top: 15px;
@@ -28,6 +32,20 @@
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
+            z-index: 10;
+        }
+        /* Menú de Inicio */
+        #menu-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(11, 17, 32, 0.95);
+            z-index: 5;
         }
         .modal {
             background: #0f172a;
@@ -37,7 +55,7 @@
             text-align: center;
             max-width: 400px;
             width: 90%;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.3);
         }
         h1 {
             color: #facc15;
@@ -69,8 +87,8 @@
             color: white;
             border-radius: 5px;
             margin-top: 10px;
-            box-sizing: border-box;
             font-family: monospace;
+            font-size: 11px;
         }
         .status {
             color: #f87171;
@@ -80,8 +98,29 @@
         .wallet-label {
             font-size: 13px;
             color: #94a3b8;
-            margin-top: 20px;
+            margin-top: 15px;
             text-align: left;
+        }
+        /* Pantalla de Juego (Canvas) */
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #080d1a;
+        }
+        /* HUD dentro del juego */
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 14px;
+            color: #38bdf8;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #1e293b;
+            pointer-events: none;
+            display: none;
         }
     </style>
 </head>
@@ -89,20 +128,28 @@
 
     <button id="lang-selector" onclick="toggleLanguage()">🌐 Español</button>
 
-    <div class="modal" id="menu-modal">
-        <h1 id="txt-title">RONKE SURVIVAL</h1>
-        
-        <button class="btn" id="txt-play" onclick="startGame()">🎮 PLAY AS GUEST</button>
-        
-        <div class="wallet-label" id="txt-wallet-label">WalletConnect (Ronin / Mobile):</div>
-        <input type="text" value="3a8170812b534d0ff9d794f19a901d64" readonly>
-        
-        <div class="status" id="txt-status">Status: Waiting for connection</div>
-        
-        <button class="btn btn-wallet" id="txt-connect" onclick="connectWallet()">🔗 CONNECT RONIN WALLET</button>
+    <!-- Menú Principal -->
+    <div id="menu-screen">
+        <div class="modal">
+            <h1 id="txt-title">RONKE SURVIVAL</h1>
+            
+            <button class="btn" id="txt-play" onclick="startGame()">🎮 PLAY AS GUEST</button>
+            
+            <div class="wallet-label" id="txt-wallet-label">WalletConnect (Ronin / Mobile):</div>
+            <input type="text" value="3a8170812b534d0ff9d794f19a901d64" readonly>
+            
+            <div class="status" id="txt-status">Status: Waiting for connection</div>
+            
+            <button class="btn btn-wallet" id="txt-connect" onclick="connectWallet()">🔗 CONNECT RONIN WALLET</button>
+        </div>
     </div>
 
+    <!-- Interfaz del Juego y Lienzo -->
+    <div id="hud">Level: <span id="lbl-lvl">1</span> | Kills: <span id="lbl-kills">0</span> | HP: <span id="lbl-hp">100</span>/100</div>
+    <canvas id="gameCanvas"></canvas>
+
     <script>
+        // Sistema de Idiomas
         const translations = {
             en: {
                 title: "RONKE SURVIVAL",
@@ -139,12 +186,180 @@
             document.getElementById('lang-selector').innerText = t.langButton;
         }
 
-        function startGame() {
-            document.getElementById('menu-modal').style.display = 'none';
-        }
-
         function connectWallet() {
             document.getElementById('txt-status').innerText = currentLang === 'en' ? "Status: Connecting..." : "Status: Conectando...";
+            setTimeout(() => {
+                document.getElementById('txt-status').innerText = currentLang === 'en' ? "Status: Connected!" : "Status: ¡Conectado!";
+                document.getElementById('txt-status').style.color = "#10b981";
+            }, 1200);
+        }
+
+        // Lógica del Juego (Motor Canvas 3000x3000px)
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let gameActive = false;
+        const WORLD_SIZE = 3000;
+
+        let player = {
+            x: 1500,
+            y: 1500,
+            radius: 15,
+            speed: 4,
+            color: '#38bdf8',
+            hp: 100,
+            maxHp: 100,
+            kills: 0,
+            level: 1
+        };
+
+        let targetX = player.x;
+        let targetY = player.y;
+
+        // Enemigos y obstáculos de prueba en el mundo
+        let enemies = [];
+        let obstacles = [
+            {x: 1400, y: 1400, w: 100, h: 50, color: '#facc15'}, // Auto neón
+            {x: 1700, y: 1200, w: 80, h: 80, color: '#ec4899'}   // Estatua Jihoz
+        ];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function startGame() {
+            document.getElementById('menu-screen').style.display = 'none';
+            document.getElementById('hud').style.display = 'block';
+            gameActive = true;
+            spawnEnemies();
+            loop();
+        }
+
+        function spawnEnemies() {
+            for(let i = 0; i < 20; i++) {
+                enemies.push({
+                    x: Math.random() * WORLD_SIZE,
+                    y: Math.random() * WORLD_SIZE,
+                    radius: 12,
+                    speed: 1.5,
+                    color: '#ef4444'
+                });
+            }
+        }
+
+        // Controles táctiles / mouse para mover al jugador en el mapa gigante
+        window.addEventListener('pointerdown', (e) => {
+            if (!gameActive) return;
+            updateTarget(e);
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!gameActive || e.buttons === 0) return;
+            updateTarget(e);
+        });
+
+        function updateTarget(e) {
+            targetX = player.x + (e.clientX - canvas.width / 2);
+            targetY = player.y + (e.clientY - canvas.height / 2);
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            // Movimiento suave hacia el destino tocado
+            let dx = targetX - player.x;
+            let dy = targetY - player.y;
+            let dist = Math.hypot(dx, dy);
+
+            if (dist > 2) {
+                player.x += (dx / dist) * player.speed;
+                player.y += (dy / dist) * player.speed;
+            }
+
+            // Mantener al jugador dentro de los límites de 3000x3000px
+            player.x = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.x));
+            player.y = Math.max(player.radius, Math.min(WORLD_SIZE - player.radius, player.y));
+
+            // Mover hordas cibernéticas hacia el jugador
+            enemies.forEach(enemy => {
+                let edx = player.x - enemy.x;
+                let edy = player.y - enemy.y;
+                let edist = Math.hypot(edx, edy);
+                if (edist > 1) {
+                    enemy.x += (edx / edist) * enemy.speed;
+                    enemy.y += (edy / edist) * enemy.speed;
+                }
+            });
+
+            // Actualizar HUD
+            document.getElementById('lbl-lvl').innerText = player.level;
+            document.getElementById('lbl-kills').innerText = player.kills;
+            document.getElementById('lbl-hp').innerText = player.hp;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            // Cámara centrada en el jugador
+            ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
+
+            // Dibujar límites del mundo (3000x3000px)
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+
+            // Dibujar cuadrícula de fondo para notar el movimiento en el mundo abierto
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 2;
+            for (let x = 0; x <= WORLD_SIZE; x += 300) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, WORLD_SIZE);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= WORLD_SIZE; y += 300) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(WORLD_SIZE, y);
+                ctx.stroke();
+            }
+
+            // Dibujar Obstáculos (autos, estatuas)
+            obstacles.forEach(obs => {
+                ctx.fillStyle = obs.color;
+                ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            });
+
+            // Dibujar Enemigos
+            enemies.forEach(enemy => {
+                ctx.fillStyle = enemy.color;
+                ctx.beginPath();
+                ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Dibujar Jugador
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function loop() {
+            update();
+            draw();
+            if (gameActive) {
+                requestAnimationFrame(loop);
+            }
         }
 
         updateTexts();
